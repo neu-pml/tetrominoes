@@ -1,7 +1,7 @@
 import sys
 import os
 import pickle
-from data_utils import TETRIS, checkerboard_pattern_5d
+from datasets import *
 from utils import save_file
 
 def warn(*args, **kwargs):
@@ -19,8 +19,8 @@ if __name__ == "__main__":
     ood_tetrominos_filename = os.path.join(DATA_PATH, "ood_tetrominos")
 
     cs = checkerboard_pattern_5d(n_checker=1)
-    id_tetrominos = TETRIS(sample="stratified_grid", train_ratio=0.5)
-    ood_tetrominos = TETRIS(sample="grid", constraints=cs)
+    id_tetrominos = TETROMINOS(sample="stratified_grid", train_ratio=0.5)
+    ood_tetrominos = TETROMINOS(sample="grid", constraints=cs)
 
     save_file(id_tetrominos_filename, id_tetrominos)
     save_file(ood_tetrominos_filename, ood_tetrominos)
@@ -28,5 +28,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         for tr in sys.argv[2:]:
             id_tetrominos_tr_filename = os.path.join(DATA_PATH, "id_tetrominos_tr=%s" % tr)
-            id_tetrominos_tr = TETRIS(sample="stratified_grid", train_ratio=float(tr))
+            id_tetrominos_tr = TETROMINOS(sample="stratified_grid", train_ratio=float(tr))
             save_file(id_tetrominos_tr_filename, id_tetrominos_tr)
