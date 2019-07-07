@@ -16,11 +16,11 @@ class Tetrominoes:
                  lim_xs=None, num_xs=16, sample_xs='continuous',
                  lim_ys=None, num_ys=16, sample_ys='continuous',
                  shapes=None,
-                 num_samples_per_shape=20000, train_ratio=0.2,
+                 num_samples_per_shape=20000, train_ratio=0.5,
                  seed=1, constraints=None,
                  num_processes=1, mode=None):
 
-        if mode in ['weak', 'strong']:
+        if mode in ['id', 'ood']:
             height = 32
             width = 32
             num_angles = 16
@@ -37,10 +37,10 @@ class Tetrominoes:
             seed = 1
             num_samples_per_shape = 160000
 
-            if mode == 'weak':
-                train_ratio = 0.36
+            if mode == 'id':
+                # train_ratio = 0.5
                 constraints = None
-            elif mode == 'strong':
+            elif mode == 'ood':
                 constraints = checkerboard_pattern_5d(lim_angles, lim_colors, lim_scales,
                                                       lim_xs, lim_ys, n_checker=1)
 
@@ -196,8 +196,8 @@ class Tetrominoes:
         r = np.eye(3)  # Rotation
         r[0, 0] = scale_ * np.cos(angle * np.pi / 180)
         r[0, 1] = scale_ * np.sin(angle * np.pi / 180)
-        r[1, 0] = -R[0, 1]
-        r[1, 1] = R[0, 0]
+        r[1, 0] = -r[0, 1]
+        r[1, 1] = r[0, 0]
         t2 = np.eye(3)  # Second translation moves rotated shape to x, y
         t2[0, 2] = int_final_ratio * (x + 0.5)
         t2[1, 2] = int_final_ratio * (y + 0.5)
