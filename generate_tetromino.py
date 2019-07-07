@@ -15,18 +15,17 @@ if __name__ == "__main__":
     if not os.path.isdir(DATA_PATH):
         os.mkdir(DATA_PATH)
 
-    id_tetrominos_filename = os.path.join(DATA_PATH, "id_tetrominos")
-    ood_tetrominos_filename = os.path.join(DATA_PATH, "ood_tetrominos")
+    id_tetrominoes_filename = os.path.join(DATA_PATH, "id_tetrominoes")
+    ood_tetrominoes_filename = os.path.join(DATA_PATH, "ood_tetrominoes")
 
-    cs = checkerboard_pattern_5d(n_checker=1)
-    id_tetrominos = TETROMINOS(sample="stratified_grid", train_ratio=0.5)
-    ood_tetrominos = TETROMINOS(sample="grid", constraints=cs)
+    id_tetrominoes = Tetrominoes(mode="id")
+    ood_tetrominoes = Tetrominoes(mode="ood")
 
-    save_file(id_tetrominos_filename, id_tetrominos)
-    save_file(ood_tetrominos_filename, ood_tetrominos)
+    save_file(id_tetrominoes_filename, id_tetrominoes)
+    save_file(ood_tetrominoes_filename, ood_tetrominoes)
 
     if len(sys.argv) > 2:
         for tr in sys.argv[2:]:
-            id_tetrominos_tr_filename = os.path.join(DATA_PATH, "id_tetrominos_tr=%s" % tr)
-            id_tetrominos_tr = TETROMINOS(sample="stratified_grid", train_ratio=float(tr))
-            save_file(id_tetrominos_tr_filename, id_tetrominos_tr)
+            id_tetrominoes_tr_filename = os.path.join(DATA_PATH, "id_tetrominoes_tr=%s" % tr)
+            id_tetrominoes_tr = Tetrominoes(mode="id", train_ratio=float(tr))
+            save_file(id_tetrominoes_tr_filename, id_tetrominoes_tr)
