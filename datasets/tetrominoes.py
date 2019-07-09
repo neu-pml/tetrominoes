@@ -8,6 +8,12 @@ import torch
 class Tetrominoes:
     """
     Dataset containing color images of multiple tetris pieces.
+
+    Arguments:
+        lim_angles (list of two floats): Lower and upper bound for angle
+        sample_angles ('continuous' or 'discrete'): if 'discrete' uses evenly spaced numbers between lim_angles,
+        if 'continuous' samples
+        num_angles (int):
     """
     def __init__(self, height=32, width=32,
                  lim_angles=None, num_angles=16, sample_angles='continuous',
@@ -16,7 +22,7 @@ class Tetrominoes:
                  lim_xs=None, num_xs=16, sample_xs='continuous',
                  lim_ys=None, num_ys=16, sample_ys='continuous',
                  shapes=None,
-                 num_samples_per_shape=20000, train_ratio=0.5,
+                 num_samples_per_shape=None, train_ratio=0.5,
                  seed=1, constraints=None,
                  num_processes=1, mode=None):
 
@@ -24,7 +30,7 @@ class Tetrominoes:
             height = 32
             width = 32
             num_angles = 16
-            lim_angles = [0, 359]
+            lim_angles = [0, 360 * (1 - 1 / num_angles)]
             num_colors = 8
             lim_colors = [0, 1 - 1 / num_colors]
             num_scales = 5
@@ -35,10 +41,10 @@ class Tetrominoes:
             lim_ys = [lim_scales[1] * 2 - 2, height - lim_scales[1] * 2 + 1]
             shapes = [0]
             seed = 1
-            num_samples_per_shape = 160000
+            num_samples_per_shape = None
 
             if mode == 'id':
-                # train_ratio = 0.5
+                train_ratio = 0.5
                 constraints = None
             elif mode == 'ood':
                 constraints = checkerboard_pattern_5d(lim_angles, lim_colors, lim_scales,
@@ -60,6 +66,8 @@ class Tetrominoes:
             lim_ys = [lim_scales[1] - 2, height - lim_scales[1] + 1]
         if shapes is None:
             shapes = [0]
+        if num_samples_per_shape is None:
+            num_samples_per_shape = num_angles * num_scales * num_colors * num_xs * num_ys
 
         # features is a dict that contains a list for every feature with following structure:
         # [is_discrete, num_features, lim_features, features_array]
@@ -107,10 +115,17 @@ class Tetrominoes:
             grid[i] = grid[i].flatten()
             features[discrete_names[i]][3] = grid[i]
         # do the sampling for continuous features
+        continuous_names = []
+        continuous_args = []
         for name, [is_discrete, num_features, lim_features, _] in features.items():
             if not is_discrete:
-                features[name][3] = stratified_uniform(lim_features[0], lim_features[1],
-                                                       num_features, num_samples_per_shape)
+                continuous_names.append(name)
+                continuous_args.append([lim_features[0], lim_features[1], num_features])
+        if len(continuous_names) > 0:
+            continuous_features = stratified_uniform(*continuous_args, num_samples=num_samples)
+            print(continuous_features.shape)
+            for i, name in enumerate(continuous_names):
+                features[name][3] = continuous_features[:, i]
         if constraints is None:
             # no constraint, do random partitioning according to train_ratio
             cut = features['angles'][3].shape[0] * train_ratio
@@ -231,18 +246,29 @@ class Tetrominoes:
         plt.tight_layout()
 
 
-def stratified_uniform(low, high, num_bins, num_samples):
+def stratified_uniform(*args, num_samples=None, shuffle=False):
+    borders = [np.linspace(low, high, num_bins, endpoint=False) for [low, high, num_bins] in args]
+    num_grids = np.multiply.reduce([num_bins for [_, _, num_bins] in args])
+    num_samples = num_grids if num_samples is None else num_samples
+    if num_samples < num_grids:
+        raise ValueError('num_samples must be greater than product of num_bins of all features')
+    borders = np.meshgrid(*borders)
+    for i in range(len(borders)):
+        borders[i] = borders[i].flatten()
+    borders = np.stack(borders, axis=-1)
+    assert borders.shape == (num_grids, len(args))
+
     samples = []
-    width = (high - low) / num_bins
-    for ind in range(num_bins):
-        samples.append(np.random.uniform(low=low + ind * width,
-                                         high=low + (ind + 1) * width,
-                                         size=num_samples // num_bins))
-    if num_samples % num_bins > 0:
-        samples.append(np.random.uniform(low=low, high=high,
-                                         size=num_samples % num_bins))
+    widths = np.array([[(high - low) / num_bins for [low, high, num_bins] in args]])
+    for _ in range(num_samples // num_grids):
+        samples.append(borders + np.random.rand(*borders.shape) * widths)
+    if num_samples % num_grids > 0:
+        lows = np.array([[low for [low, _, _] in args]])
+        highs = np.array([[high for [_, high, _] in args]])
+        samples.append(lows + np.random.rand(num_samples % num_grids, lows.shape[-1]) * (highs - lows))
     samples = np.concatenate(samples, axis=0)
-    np.random.shuffle(samples)
+    if shuffle:
+        np.random.shuffle(samples)
     return samples
 
 
