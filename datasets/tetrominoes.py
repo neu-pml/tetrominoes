@@ -3,6 +3,7 @@ import cv2
 import warnings
 from tqdm.auto import tqdm
 import torch
+from torch.utils.data import TensorDataset
 
 
 class Tetrominoes:
@@ -170,6 +171,14 @@ class Tetrominoes:
         self.test_labels = torch.tensor(self.test_labels)
         self.num_train = self.train_data.shape[0]
         self.num_test = self.test_data.shape[0]
+
+    @property
+    def train_dataset(self):
+        return TensorDataset(self.train_data, self.train_labels)
+
+    @property
+    def test_dataset(self):
+        return TensorDataset(self.test_data, self.test_labels)
 
     @staticmethod
     def get_data_by_label(angle=0, color=0, scale=1, x=16, y=16, shape=0, height=32, width=32, value=1.0,
