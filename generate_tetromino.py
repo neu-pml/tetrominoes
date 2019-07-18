@@ -27,5 +27,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         for tr in sys.argv[2:]:
             id_tetrominoes_tr_filename = os.path.join(DATA_PATH, "id_tetrominoes_tr=%s" % tr)
-            id_tetrominoes_tr = Tetrominoes(mode="id", train_ratio=float(tr))
+            id_tetrominoes_tr = Tetrominoes(train_ratio=float(tr))
             save_file(id_tetrominoes_tr_filename, id_tetrominoes_tr)
