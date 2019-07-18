@@ -1,9 +1,10 @@
-import numpy as np
-import cv2
 import warnings
-from tqdm.auto import tqdm
+
+import cv2
+import numpy as np
 import torch
 from torch.utils.data import TensorDataset
+from tqdm.auto import tqdm
 
 
 class Tetrominoes:
@@ -16,6 +17,7 @@ class Tetrominoes:
         if 'continuous' samples
         num_angles (int):
     """
+
     def __init__(self, height=32, width=32,
                  lim_angles=None, num_angles=16, sample_angles='continuous',
                  lim_scales=None, num_scales=5, sample_scales='continuous',
@@ -74,17 +76,21 @@ class Tetrominoes:
         # [is_discrete, num_features, lim_features, features_array]
         features = dict()
         features['angles'] = [sample_angles == 'discrete', num_angles, lim_angles,
-                              np.linspace(lim_angles[0], lim_angles[1], num_angles) if sample_angles == 'discrete' else None]
+                              np.linspace(lim_angles[0], lim_angles[1],
+                                          num_angles) if sample_angles == 'discrete' else None]
         features['colors'] = [sample_colors == 'discrete', num_colors, lim_colors,
-                              np.linspace(lim_colors[0], lim_colors[1], num_colors) if sample_colors == 'discrete' else None]
+                              np.linspace(lim_colors[0], lim_colors[1],
+                                          num_colors) if sample_colors == 'discrete' else None]
         features['scales'] = [sample_scales == 'discrete', num_scales, lim_scales,
-                              np.linspace(lim_scales[0], lim_scales[1], num_scales) if sample_scales == 'discrete' else None]
+                              np.linspace(lim_scales[0], lim_scales[1],
+                                          num_scales) if sample_scales == 'discrete' else None]
         features['xs'] = [sample_xs == 'discrete', num_xs, lim_xs,
                           np.linspace(lim_xs[0], lim_xs[1], num_xs) if sample_xs == 'discrete' else None]
         features['ys'] = [sample_ys == 'discrete', num_ys, lim_ys,
                           np.linspace(lim_ys[0], lim_ys[1], num_ys) if sample_ys == 'discrete' else None]
 
-        num_grid_points = np.multiply.reduce([num_features if is_discrete else 1 for is_discrete, num_features, _, _ in features.values()])
+        num_grid_points = np.multiply.reduce(
+            [num_features if is_discrete else 1 for is_discrete, num_features, _, _ in features.values()])
 
         if np.all([is_discrete for is_discrete, _, _, _ in features.values()]):
             # if all features are discrete, number of samples are size of the cartesian product of features,
@@ -251,7 +257,8 @@ class Tetrominoes:
             ax.imshow(samples[i])
             ax.set_title('a:{:.1f},c:{:.1f},\ns:{:.1f},x:{:.1f},\ny:{:.1f},sh:{:d}'.format(labels[i, 0], labels[i, 1],
                                                                                            labels[i, 2], labels[i, 3],
-                                                                                           labels[i, 4], int(labels[i, 5])))
+                                                                                           labels[i, 4],
+                                                                                           int(labels[i, 5])))
         plt.tight_layout()
 
 
