@@ -24,8 +24,7 @@ class Tetrominoes:
                  lim_colors=None, num_colors=8, sample_colors='continuous',
                  lim_xs=None, num_xs=16, sample_xs='continuous',
                  lim_ys=None, num_ys=16, sample_ys='continuous',
-                 shapes=None,
-                 num_samples_per_shape=None, train_ratio=0.5,
+                 shapes=None, num_train_per_shape=None, num_val_per_shape=None, num_test_per_shape=None,
                  seed=1, constraints=None,
                  num_processes=1, mode=None):
 
@@ -44,10 +43,13 @@ class Tetrominoes:
             lim_ys = [lim_scales[1] * 2 - 2, height - lim_scales[1] * 2 + 1]
             shapes = [0]
             seed = 1
-            num_samples_per_shape = None
 
             if mode == 'id':
-                train_ratio = 0.5
+                if num_train_per_shape is None:
+                    num_train_per_shape = 81920
+                if num_val_per_shape is None:
+                    num_val_per_shape = 10000
+                num_test_per_shape = 81920
                 constraints = None
             elif mode == 'ood':
                 constraints = checkerboard_pattern_5d(lim_angles, lim_colors, lim_scales,
@@ -69,8 +71,8 @@ class Tetrominoes:
             lim_ys = [lim_scales[1] - 2, height - lim_scales[1] + 1]
         if shapes is None:
             shapes = [0]
-        if num_samples_per_shape is None:
-            num_samples_per_shape = num_angles * num_scales * num_colors * num_xs * num_ys
+        num_samples_per_shape = num_train_per_shape + num_val_per_shape + num_test_per_shape
+        train_ratio = 1 - num_test_per_shape / num_samples_per_shape
 
         # features is a dict that contains a list for every feature with following structure:
         # [is_discrete, num_features, lim_features, features_array]
@@ -121,6 +123,7 @@ class Tetrominoes:
         for i in range(len(grid) - 1):
             grid[i] = grid[i].flatten()
             features[discrete_names[i]][3] = grid[i]
+        
         # do the sampling for continuous features
         continuous_names = []
         continuous_args = []
@@ -128,6 +131,7 @@ class Tetrominoes:
             if not is_discrete:
                 continuous_names.append(name)
                 continuous_args.append([lim_features[0], lim_features[1], num_features])
+        
         if len(continuous_names) > 0:
             continuous_features = stratified_uniform(*continuous_args, num_samples=num_samples)
             print(continuous_features.shape)
@@ -141,16 +145,22 @@ class Tetrominoes:
             # apply constraints
             mask = constraints(features['angles'][3], features['colors'][3],
                                features['scales'][3], features['xs'][3], features['ys'][3])
+        
         self.train_labels = np.stack([f[mask] for _, _, _, f in features.values()], axis=-1)
         mask = np.logical_not(mask)
         self.test_labels = np.stack([f[mask] for _, _, _, f in features.values()], axis=-1)
-
+        val_ratio = num_val_per_shape / (num_train_per_shape + num_val_per_shape)
+        cut = self.train_labels.shape[0] * val_ratio
+        mask = np.random.permutation(self.train_labels.shape[0]) < cut
+        self.val_labels  = self.train_labels[mask]
+        self.train_labels = self.train_labels[np.logical_not(mask)]  
         if num_processes > 1:
             try:
                 import multiprocessing as mp
                 with mp.Pool(processes=num_processes) as pool:
                     self.train_data = pool.starmap(self.get_data_by_label, self.train_labels.tolist())
-
+                with mp.Pool(processes=num_processes) as pool:
+                    self.val_data = pool.starmap(self.get_data_by_label, self.val_labels.tolist())
                 with mp.Pool(processes=num_processes) as pool:
                     self.test_data = pool.starmap(self.get_data_by_label, self.test_labels.tolist())
             except ImportError:
@@ -168,19 +178,33 @@ class Tetrominoes:
                 self.test_data.append(self.get_data_by_label(self.test_labels[i, 0], self.test_labels[i, 1],
                                                              self.test_labels[i, 2], self.test_labels[i, 3],
                                                              self.test_labels[i, 4], self.test_labels[i, 5]))
+                                                             self.test_data = []
+            self.val_data = []
+            for i in tqdm(range(self.val_labels.shape[0]), desc='Val data'):
+                self.val_data.append(self.get_data_by_label(self.val_labels[i, 0], self.val_labels[i, 1],
+                                                            self.val_labels[i, 2], self.val_labels[i, 3],
+                                                            self.val_labels[i, 4], self.val_labels[i, 5]))
 
         self.train_data = torch.tensor(np.stack(self.train_data, axis=0),
                                        dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
         self.test_data = torch.tensor(np.stack(self.test_data, axis=0),
                                       dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
+        self.val_data = torch.tensor(np.stack(self.val_data, axis=0),
+                                      dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
         self.train_labels = torch.tensor(self.train_labels)
         self.test_labels = torch.tensor(self.test_labels)
+        self.val_labels = torch.tensor(self.val_labels)
         self.num_train = self.train_data.shape[0]
+        self.num_val = self.val_data.shape[0]
         self.num_test = self.test_data.shape[0]
 
     @property
     def train_dataset(self):
         return TensorDataset(self.train_data, self.train_labels)
+        
+    @property
+    def val_dataset(self):
+        return TensorDataset(self.val_data, self.val_labels)
 
     @property
     def test_dataset(self):
