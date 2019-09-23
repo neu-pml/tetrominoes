@@ -25,9 +25,19 @@ class Tetrominoes:
                  lim_xs=None, num_xs=16, sample_xs='continuous',
                  lim_ys=None, num_ys=16, sample_ys='continuous',
                  shapes=None, num_train_per_shape=None, num_val_per_shape=None, num_test_per_shape=None,
+                 train_data=None, train_labels=None, val_data=None, val_labels=None, test_data=None, test_labels=None, 
                  seed=1, constraints=None,
                  num_processes=1, mode=None):
-
+        if (((train_data is None) != (train_labels is None)) or
+            ((val_data is None) != (val_labels is None)) or
+            ((test_data is None) != (test_labels is None))):
+            raise ValueError('You must provide data with labels')
+        if (train_data is not None) and (train_data.shape[0] != train_labels.shape[0]):
+            raise ValueError("train_data shape and train_labels shape don't match")
+        if (val_data is not None) and (val_data.shape[0] != val_labels.shape[0]):
+            raise ValueError("val_data shape and val_labels shape don't match")
+        if (test_data is not None) and (test_data.shape[0] != test_labels.shape[0]):
+            raise ValueError("test_data shape and test_labels shape don't match")
         if mode in ['id', 'ood']:
             height = 32
             width = 32
@@ -157,43 +167,74 @@ class Tetrominoes:
         if num_processes > 1:
             try:
                 import multiprocessing as mp
-                with mp.Pool(processes=num_processes) as pool:
-                    self.train_data = pool.starmap(self.get_data_by_label, self.train_labels.tolist())
-                with mp.Pool(processes=num_processes) as pool:
-                    self.val_data = pool.starmap(self.get_data_by_label, self.val_labels.tolist())
-                with mp.Pool(processes=num_processes) as pool:
-                    self.test_data = pool.starmap(self.get_data_by_label, self.test_labels.tolist())
+                if train_data is None:
+                    with mp.Pool(processes=num_processes) as pool:
+                        self.train_data = pool.starmap(self.get_data_by_label, self.train_labels.tolist())
+                else:
+                    self.train_data = train_data
+                    self.train_labels = train_labels
+                if val_labels is None:
+                    with mp.Pool(processes=num_processes) as pool:
+                        self.val_data = pool.starmap(self.get_data_by_label, self.val_labels.tolist())
+                else:
+                    self.val_data = val_data
+                    self.val_labels = val_labels
+                if test_data is None:
+                    with mp.Pool(processes=num_processes) as pool:
+                        self.test_data = pool.starmap(self.get_data_by_label, self.test_labels.tolist())
+                else:
+                    self.test_data = test_data
+                    self.test_labels = test_labels
             except ImportError:
                 warnings.warn('Error importing multiprocessing, setting num_processes=1.')
                 num_processes = 1
 
         if num_processes == 1:
-            self.train_data = []
-            for i in tqdm(range(self.train_labels.shape[0]), desc='Train data'):
-                self.train_data.append(self.get_data_by_label(self.train_labels[i, 0], self.train_labels[i, 1],
-                                                              self.train_labels[i, 2], self.train_labels[i, 3],
-                                                              self.train_labels[i, 4], self.train_labels[i, 5]))
-            self.test_data = []
-            for i in tqdm(range(self.test_labels.shape[0]), desc='Test data'):
-                self.test_data.append(self.get_data_by_label(self.test_labels[i, 0], self.test_labels[i, 1],
-                                                             self.test_labels[i, 2], self.test_labels[i, 3],
-                                                             self.test_labels[i, 4], self.test_labels[i, 5]))
-                                                             self.test_data = []
-            self.val_data = []
-            for i in tqdm(range(self.val_labels.shape[0]), desc='Val data'):
-                self.val_data.append(self.get_data_by_label(self.val_labels[i, 0], self.val_labels[i, 1],
-                                                            self.val_labels[i, 2], self.val_labels[i, 3],
-                                                            self.val_labels[i, 4], self.val_labels[i, 5]))
+            if train_data is None:
+                self.train_data = []
+                for i in tqdm(range(self.train_labels.shape[0]), desc='Train data'):
+                    self.train_data.append(self.get_data_by_label(self.train_labels[i, 0], self.train_labels[i, 1],
+                                                                  self.train_labels[i, 2], self.train_labels[i, 3],
+                                                                  self.train_labels[i, 4], self.train_labels[i, 5]))
+            else:
+                self.train_data = train_data
+                self.train_labels = train_labels
+            
+            if test_data is None:
+                self.test_data = []
+                for i in tqdm(range(self.test_labels.shape[0]), desc='Test data'):
+                    self.test_data.append(self.get_data_by_label(self.test_labels[i, 0], self.test_labels[i, 1],
+                                                                 self.test_labels[i, 2], self.test_labels[i, 3],
+                                                                 self.test_labels[i, 4], self.test_labels[i, 5]))
+            else:
+                self.test_data = test_data
+                self.test_labels = test_labels
+            
+            if val_data is None:
+                self.val_data = []
+                for i in tqdm(range(self.val_labels.shape[0]), desc='Val data'):
+                    self.val_data.append(self.get_data_by_label(self.val_labels[i, 0], self.val_labels[i, 1],
+                                                                self.val_labels[i, 2], self.val_labels[i, 3],
+                                                                self.val_labels[i, 4], self.val_labels[i, 5]))
+            else:
+                self.val_data = val_data
+                self.val_labels = val_labels
 
-        self.train_data = torch.tensor(np.stack(self.train_data, axis=0),
-                                       dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
-        self.test_data = torch.tensor(np.stack(self.test_data, axis=0),
-                                      dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
-        self.val_data = torch.tensor(np.stack(self.val_data, axis=0),
-                                      dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
-        self.train_labels = torch.tensor(self.train_labels)
-        self.test_labels = torch.tensor(self.test_labels)
-        self.val_labels = torch.tensor(self.val_labels)
+        if not torch.is_tensor(self.train_data):
+            self.train_data = torch.tensor(np.stack(self.train_data, axis=0),
+                                           dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
+        if not torch.is_tensor(self.test_data):
+            self.test_data = torch.tensor(np.stack(self.test_data, axis=0),
+                                          dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
+        if not torch.is_tensor(self.val_data):
+            self.val_data = torch.tensor(np.stack(self.val_data, axis=0),
+                                         dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
+        if not torch.is_tensor(self.train_labels):
+            self.train_labels = torch.tensor(self.train_labels)
+        if not torch.is_tensor(self.test_labels):
+            self.test_labels = torch.tensor(self.test_labels)
+        if not torch.is_tensor(self.val_labels):
+            self.val_labels = torch.tensor(self.val_labels)
         self.num_train = self.train_data.shape[0]
         self.num_val = self.val_data.shape[0]
         self.num_test = self.test_data.shape[0]
