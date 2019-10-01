@@ -26,7 +26,7 @@ class Tetrominoes:
                  lim_ys=None, num_ys=16, sample_ys='continuous',
                  shapes=None, num_train_per_shape=None, num_val_per_shape=None, num_test_per_shape=None,
                  train_data=None, train_labels=None, val_data=None, val_labels=None, test_data=None, test_labels=None,
-                 seed=1, constraints=None, num_processes=1, mode=None):
+                 seed=1, constraints=None, num_processes=1, mode=None, train_ratio=None):
         if (((train_data is None) != (train_labels is None)) or
             ((val_data is None) != (val_labels is None)) or
                 ((test_data is None) != (test_labels is None))):
@@ -52,6 +52,10 @@ class Tetrominoes:
             lim_ys = [lim_scales[1] * 2 - 2, height - lim_scales[1] * 2 + 1]
             shapes = [0]
             seed = 1
+            if train_ratio is not None:
+                num_train_per_shape = int(train_ratio * 163840)
+                num_test_per_shape = int((1-train_ratio) * 163840)
+                num_val_per_shape = 0
             if num_train_per_shape is None:
                 num_train_per_shape = 81920
             if num_val_per_shape is None:
