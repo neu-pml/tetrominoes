@@ -221,15 +221,24 @@ class Tetrominoes:
                 self.val_data = val_data
                 self.val_labels = val_labels
 
+        if self.train_data and isinstance(self.train_data, list):
+            self.train_data = torch.tensor(np.stack(self.train_data, axis=0), dtype=torch.float).permute(
+                0, 3, 1, 2).reshape(-1, height * width * 3)
+
+        if self.test_data and isinstance(self.test_data, list):
+            self.test_data = torch.tensor(np.stack(self.test_data, axis=0), dtype=torch.float).permute(
+                0, 3, 1, 2).reshape(-1, height * width * 3)
+
+        if self.val_data and isinstance(self.val_data, list):
+            self.val_data = torch.tensor(np.stack(self.val_data, axis=0), dtype=torch.float).permute(
+                0, 3, 1, 2).reshape(-1, height * width * 3)
+
         if not torch.is_tensor(self.train_data):
-            self.train_data = torch.tensor([]) if not self.train_data else torch.tensor(np.stack(self.train_data, axis=0),
-                                           dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
+            self.train_data = torch.tensor(self.train_data)
         if not torch.is_tensor(self.test_data):
-            self.test_data = torch.tensor([]) if not self.test_data else torch.tensor(np.stack(self.test_data, axis=0),
-                                          dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
+            self.test_data = torch.tensor(self.test_data)
         if not torch.is_tensor(self.val_data):
-            self.val_data = torch.tensor([]) if not self.val_data else torch.tensor(np.stack(self.val_data, axis=0),
-                                         dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
+            self.val_data = torch.tensor(self.val_data)
         if not torch.is_tensor(self.train_labels):
             self.train_labels = torch.tensor(self.train_labels)
         if not torch.is_tensor(self.test_labels):
