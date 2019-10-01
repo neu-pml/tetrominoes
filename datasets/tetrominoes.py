@@ -25,12 +25,11 @@ class Tetrominoes:
                  lim_xs=None, num_xs=16, sample_xs='continuous',
                  lim_ys=None, num_ys=16, sample_ys='continuous',
                  shapes=None, num_train_per_shape=None, num_val_per_shape=None, num_test_per_shape=None,
-                 train_data=None, train_labels=None, val_data=None, val_labels=None, test_data=None, test_labels=None, 
-                 seed=1, constraints=None,
-                 num_processes=1, mode=None):
+                 train_data=None, train_labels=None, val_data=None, val_labels=None, test_data=None, test_labels=None,
+                 seed=1, constraints=None, num_processes=1, mode=None):
         if (((train_data is None) != (train_labels is None)) or
             ((val_data is None) != (val_labels is None)) or
-            ((test_data is None) != (test_labels is None))):
+                ((test_data is None) != (test_labels is None))):
             raise ValueError('You must provide data with labels')
         if (train_data is not None) and (train_data.shape[0] != train_labels.shape[0]):
             raise ValueError("train_data shape and train_labels shape don't match")
@@ -134,7 +133,7 @@ class Tetrominoes:
         for i in range(len(grid) - 1):
             grid[i] = grid[i].flatten()
             features[discrete_names[i]][3] = grid[i]
-        
+
         # do the sampling for continuous features
         continuous_names = []
         continuous_args = []
@@ -142,10 +141,9 @@ class Tetrominoes:
             if not is_discrete:
                 continuous_names.append(name)
                 continuous_args.append([lim_features[0], lim_features[1], num_features])
-        
+
         if len(continuous_names) > 0:
             continuous_features = stratified_uniform(*continuous_args, num_samples=num_samples)
-            print(continuous_features.shape)
             for i, name in enumerate(continuous_names):
                 features[name][3] = continuous_features[:, i]
         if constraints is None:
@@ -156,15 +154,15 @@ class Tetrominoes:
             # apply constraints
             mask = constraints(features['angles'][3], features['colors'][3],
                                features['scales'][3], features['xs'][3], features['ys'][3])
-        
+
         self.train_labels = np.stack([f[mask] for _, _, _, f in features.values()], axis=-1)
         mask = np.logical_not(mask)
         self.test_labels = np.stack([f[mask] for _, _, _, f in features.values()], axis=-1)
         val_ratio = num_val_per_shape / (num_train_per_shape + num_val_per_shape)
         cut = self.train_labels.shape[0] * val_ratio
         mask = np.random.permutation(self.train_labels.shape[0]) < cut
-        self.val_labels  = self.train_labels[mask]
-        self.train_labels = self.train_labels[np.logical_not(mask)]  
+        self.val_labels = self.train_labels[mask]
+        self.train_labels = self.train_labels[np.logical_not(mask)]
         if num_processes > 1:
             try:
                 import multiprocessing as mp
@@ -200,7 +198,7 @@ class Tetrominoes:
             else:
                 self.train_data = train_data
                 self.train_labels = train_labels
-            
+
             if test_data is None:
                 self.test_data = []
                 for i in tqdm(range(self.test_labels.shape[0]), desc='Test data'):
@@ -210,7 +208,7 @@ class Tetrominoes:
             else:
                 self.test_data = test_data
                 self.test_labels = test_labels
-            
+
             if val_data is None:
                 self.val_data = []
                 for i in tqdm(range(self.val_labels.shape[0]), desc='Val data'):
@@ -252,7 +250,7 @@ class Tetrominoes:
     @property
     def train_dataset(self):
         return TensorDataset(self.train_data, self.train_labels)
-        
+
     @property
     def val_dataset(self):
         return TensorDataset(self.val_data, self.val_labels)
