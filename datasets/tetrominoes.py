@@ -41,33 +41,28 @@ class Tetrominoes:
         if mode in ['id', 'ood']:
             height = 32
             width = 32
-            #num_angles = 16
+            # num_angles = 16
             lim_angles = [0, 360 * (1 - 1 / num_angles)]
-            #num_colors = 8
+            # num_colors = 8
             lim_colors = [0, 1 - 1 / num_colors]
-            #num_scales = 5
+            # num_scales = 5
             lim_scales = [2, 5]
-            #num_xs = 16
+            # num_xs = 16
             lim_xs = [lim_scales[1] * 2 - 2, width - lim_scales[1] * 2 + 1]
-            #num_ys = 16
+            # num_ys = 16
             lim_ys = [lim_scales[1] * 2 - 2, height - lim_scales[1] * 2 + 1]
             shapes = [0]
             seed = 1
+            if num_train_per_shape is None:
+                num_train_per_shape = 81920
+            if num_val_per_shape is None:
+                num_val_per_shape = 10000
+            if num_test_per_shape is None:
+                num_test_per_shape = 81920
 
             if mode == 'id':
-                if num_train_per_shape is None:
-                    num_train_per_shape = 81920
-                if num_val_per_shape is None:
-                    num_val_per_shape = 10000
-                if num_test_per_shape is None:
-                    num_test_per_shape = 81920
                 constraints = None
-            elif mode == 'ood':
-                if num_train_per_shape is None:
-                    num_train_per_shape = 81920
-                if num_val_per_shape is None:
-                    num_val_per_shape = 10000
-                num_test_per_shape = 81920
+            else:  # mode == 'ood'
                 constraints = checkerboard_pattern_5d(lim_angles, lim_colors, lim_scales,
                                                       lim_xs, lim_ys, n_checker=1)
 
@@ -76,15 +71,15 @@ class Tetrominoes:
         if seed is not None:
             np.random.seed(seed)
         if lim_angles is None:
-            lim_angles = [0, 359]
+            lim_angles = [0, 360 * (1 - 1 / num_angles)]
         if lim_colors is None:
             lim_colors = [0, 1 - 1 / num_colors]
         if lim_scales is None:
-            lim_scales = [1.2, 3]
+            lim_scales = [2, 5]  # used to be [1.2, 3]
         if lim_xs is None:
-            lim_xs = [lim_scales[1] - 2, width - lim_scales[1] + 1]
+            lim_xs = [lim_scales[1] * 2 - 2, width - lim_scales[1] * 2 + 1]
         if lim_ys is None:
-            lim_ys = [lim_scales[1] - 2, height - lim_scales[1] + 1]
+            lim_ys = [lim_scales[1] * 2 - 2, height - lim_scales[1] * 2 + 1]
         if shapes is None:
             shapes = [0]
         num_samples_per_shape = num_train_per_shape + num_val_per_shape + num_test_per_shape
