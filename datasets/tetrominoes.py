@@ -55,7 +55,7 @@ class Tetrominoes:
             if num_train_per_shape is None:
                 num_train_per_shape = 81920
             if num_val_per_shape is None:
-                num_val_per_shape = 10000
+                num_val_per_shape = 0
             if num_test_per_shape is None:
                 num_test_per_shape = 81920
 
