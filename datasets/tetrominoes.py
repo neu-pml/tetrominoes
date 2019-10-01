@@ -41,15 +41,15 @@ class Tetrominoes:
         if mode in ['id', 'ood']:
             height = 32
             width = 32
-            num_angles = 16
+            #num_angles = 16
             lim_angles = [0, 360 * (1 - 1 / num_angles)]
-            num_colors = 8
+            #num_colors = 8
             lim_colors = [0, 1 - 1 / num_colors]
-            num_scales = 5
+            #num_scales = 5
             lim_scales = [2, 5]
-            num_xs = 16
+            #num_xs = 16
             lim_xs = [lim_scales[1] * 2 - 2, width - lim_scales[1] * 2 + 1]
-            num_ys = 16
+            #num_ys = 16
             lim_ys = [lim_scales[1] * 2 - 2, height - lim_scales[1] * 2 + 1]
             shapes = [0]
             seed = 1
@@ -59,9 +59,15 @@ class Tetrominoes:
                     num_train_per_shape = 81920
                 if num_val_per_shape is None:
                     num_val_per_shape = 10000
-                num_test_per_shape = 81920
+                if num_test_per_shape is None:
+                    num_test_per_shape = 81920
                 constraints = None
             elif mode == 'ood':
+                if num_train_per_shape is None:
+                    num_train_per_shape = 81920
+                if num_val_per_shape is None:
+                    num_val_per_shape = 10000
+                num_test_per_shape = 81920
                 constraints = checkerboard_pattern_5d(lim_angles, lim_colors, lim_scales,
                                                       lim_xs, lim_ys, n_checker=1)
 
@@ -221,13 +227,13 @@ class Tetrominoes:
                 self.val_labels = val_labels
 
         if not torch.is_tensor(self.train_data):
-            self.train_data = torch.tensor(np.stack(self.train_data, axis=0),
+            self.train_data = torch.tensor([]) if not self.train_data else torch.tensor(np.stack(self.train_data, axis=0),
                                            dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
         if not torch.is_tensor(self.test_data):
-            self.test_data = torch.tensor(np.stack(self.test_data, axis=0),
+            self.test_data = torch.tensor([]) if not self.test_data else torch.tensor(np.stack(self.test_data, axis=0),
                                           dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
         if not torch.is_tensor(self.val_data):
-            self.val_data = torch.tensor(np.stack(self.val_data, axis=0),
+            self.val_data = torch.tensor([]) if not self.val_data else torch.tensor(np.stack(self.val_data, axis=0),
                                          dtype=torch.float).permute(0, 3, 1, 2).reshape(-1, height * width * 3)
         if not torch.is_tensor(self.train_labels):
             self.train_labels = torch.tensor(self.train_labels)
