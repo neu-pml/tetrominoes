@@ -247,9 +247,18 @@ class Tetrominoes:
             self.test_labels = torch.tensor(self.test_labels)
         if not torch.is_tensor(self.val_labels):
             self.val_labels = torch.tensor(self.val_labels)
-        self.num_train = self.train_data.shape[0]
-        self.num_val = self.val_data.shape[0]
-        self.num_test = self.test_data.shape[0]
+
+    @property
+    def num_train(self):
+        return self.train_data.shape[0]
+
+    @property
+    def num_val(self):
+        return self.val_data.shape[0]
+
+    @property
+    def num_test(self):
+        return self.test_data.shape[0]
 
     @property
     def train_dataset(self):
