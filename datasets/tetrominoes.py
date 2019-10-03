@@ -40,15 +40,15 @@ class Tetrominoes:
         if mode in ['id', 'ood']:
             height = 32
             width = 32
-            # num_angles = 16
+            num_angles = 16
             lim_angles = [0, 360 * (1 - 1 / num_angles)]
-            # num_colors = 8
+            num_colors = 8
             lim_colors = [0, 1 - 1 / num_colors]
-            # num_scales = 5
+            num_scales = 5
             lim_scales = [2, 5]
-            # num_xs = 16
+            num_xs = 16
             lim_xs = [lim_scales[1] * 2 - 2, width - lim_scales[1] * 2 + 1]
-            # num_ys = 16
+            num_ys = 16
             lim_ys = [lim_scales[1] * 2 - 2, height - lim_scales[1] * 2 + 1]
             shapes = [0]
             seed = 1
