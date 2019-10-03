@@ -409,3 +409,65 @@ def checkerboard_pattern_5d(lim_angles=None, lim_colors=None, lim_scales=None,
                  ((y - low_ys) / width_y).astype(np.long)]
 
     return check_fn
+
+
+class CroppedTetrominoes(Tetrominoes):
+    def __init__(self, dataset=None, ratio=1):
+        if ratio > 1:
+            raise ValueError('ratio must be <= 1')
+        if dataset is None:
+            super().__init__(mode='id')
+        else:
+            self.train_labels = dataset.train_labels
+            self.train_data = dataset.train_data
+            self.test_labels = dataset.test_labels
+            self.test_data = dataset.test_data
+            self.val_labels = dataset.val_labels
+            self.val_data = dataset.val_data
+            self.height = dataset.height
+            self.width = dataset.width
+
+        num_angles = 16
+        lim_angles = [0, 360 * (1 - 1 / num_angles)]
+        num_colors = 8
+        lim_colors = [0, 1 - 1 / num_colors]
+        lim_scales = [2, 5]
+        lim_xs = [lim_scales[1] * 2 - 2, self.width - lim_scales[1] * 2 + 1]
+        lim_ys = [lim_scales[1] * 2 - 2, self.height - lim_scales[1] * 2 + 1]
+
+        def adjust_limits(limits, ratio):
+            width = (limits[1] - limits[0]) * (1 - (ratio ** 0.2)) / 2
+            return [limits[0] + width, limits[1] - width]
+
+        lim_angles = adjust_limits(lim_angles, ratio)
+        lim_colors = adjust_limits(lim_colors, ratio)
+        lim_scales = adjust_limits(lim_scales, ratio)
+        lim_xs = adjust_limits(lim_xs, ratio)
+        lim_ys = adjust_limits(lim_ys, ratio)
+        if self.train_data.shape[0] > 0:
+            m = ((self.train_labels[:, 0] >= lim_angles[0]) & (self.train_labels[:, 0] < lim_angles[1]) &
+                 (self.train_labels[:, 1] >= lim_colors[0]) & (self.train_labels[:, 1] < lim_colors[1]) &
+                 (self.train_labels[:, 2] >= lim_scales[0]) & (self.train_labels[:, 2] < lim_scales[1]) &
+                 (self.train_labels[:, 3] >= lim_xs[0]) & (self.train_labels[:, 3] < lim_xs[1]) &
+                 (self.train_labels[:, 4] >= lim_ys[0]) & (self.train_labels[:, 4] < lim_ys[1]))
+            self.train_data = self.train_data[m, ...]
+            self.train_labels = self.train_labels[m, ...]
+            # self.num_train = self.train_labels.shape[0]
+        if self.val_data.shape[0] > 0:
+            m = ((self.val_labels[:, 0] >= lim_angles[0]) & (self.val_labels[:, 0] < lim_angles[1]) &
+                 (self.val_labels[:, 1] >= lim_colors[0]) & (self.val_labels[:, 1] < lim_colors[1]) &
+                 (self.val_labels[:, 2] >= lim_scales[0]) & (self.val_labels[:, 2] < lim_scales[1]) &
+                 (self.val_labels[:, 3] >= lim_xs[0]) & (self.val_labels[:, 3] < lim_xs[1]) &
+                 (self.val_labels[:, 4] >= lim_ys[0]) & (self.val_labels[:, 4] < lim_ys[1]))
+            self.val_data = self.val_data[m, ...]
+            self.val_labels = self.val_labels[m, ...]
+            # self.num_val = self.val_labels.shape[0]
+        if self.test_data.shape[0] > 0:
+            m = ((self.test_labels[:, 0] >= lim_angles[0]) & (self.test_labels[:, 0] < lim_angles[1]) &
+                 (self.test_labels[:, 1] >= lim_colors[0]) & (self.test_labels[:, 1] < lim_colors[1]) &
+                 (self.test_labels[:, 2] >= lim_scales[0]) & (self.test_labels[:, 2] < lim_scales[1]) &
+                 (self.test_labels[:, 3] >= lim_xs[0]) & (self.test_labels[:, 3] < lim_xs[1]) &
+                 (self.test_labels[:, 4] >= lim_ys[0]) & (self.test_labels[:, 4] < lim_ys[1]))
+            self.test_data = self.test_data[m, ...]
+            self.test_labels = self.test_labels[m, ...]
+            # self.num_test = self.test_labels.shape[0]
