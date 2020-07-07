@@ -10,7 +10,7 @@ If you use this dataset in your work, please cite it as follows:
 @misc{tetrominoes19,
 author = {Alican Bozkurt and Babak Esmaeili and Jennifer Dy and Dana Brooks and Jan-Willem van de Meent},
 title = {Tetrominoes dataset},
-howpublished= {https://github.com/alicanb/tetrominoes/},
+howpublished= {https://github.com/neu-pml/tetrominoes/},
 year = "2019",
 }
 ```
